@@ -1,7 +1,7 @@
 <nav class="menuBar navbar navbar-default navbar-fixed-top">
 		<div class=" container">
 			{{#if user}}
-			<p class="navText">Welcome {{user.username}}</p>
+			<p class="navText">Welcome <a href="/profile">{{user.username}}</a></p>
 			<a href="/logout"><button class="navBtn logoutButton btn btn-primary pull-right">Logout</button></a>
 			{{else}}
 			<p class="navText">Please sign in for a personal experience</p>

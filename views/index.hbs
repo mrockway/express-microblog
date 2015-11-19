@@ -50,9 +50,9 @@
 				<p class="category">Categoty: \{{ category }}</p>
 				<h2 class="mainBlogTitle text-center">\{{ title }}</h2>
 				<p class="blogPostContent">\{{ blogContent }}</p>
-				\{{#each postedBy}}
-				<p>Posted by: \{{ username }}</p>
-				\{{/each}}
+				
+				<p>Posted by: \{{ postedBy.username }}</p>
+			
 				{{!-- css comment form --}}
 				<button data-toggle="collapse" data-target="#addComment-\{{_id}}"class="addComment btn btn-sm btn-primary">thoughts?</button>
 				<form class="addCommentForm form-group collapse" id="addComment-\{{_id}}">

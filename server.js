@@ -7,6 +7,8 @@ var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
+var GitHubStrategy = require('passport-github').Strategy;
+var oauth = require('./oauth.js');
 
 // require models
 var Blog = require('./models/blog');
@@ -29,8 +31,42 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 passport.use(new LocalStrategy(User.authenticate()));
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+
+//passport-github configuration
+passport.use(new GitHubStrategy({
+	clientID: oauth.github.clientID,
+	clientSecret: oauth.github.clientSecret,
+	callbackURL: oauth.github.callbackURL
+}, function (accessToken, refreshToken, profile, done) {
+	User.findOne({oauthID: profile.id}, function (err, foundUser) {
+		if (foundUser) {
+			done (null, foundUser);
+		}
+		else {
+			var newUser = new User ({
+				oauthID: profile.id,
+				username: profile.username
+			});
+			newUser.save(function (err, savedUser) {
+				console.log('saving user...');
+				done(null, savedUser);
+			});
+		}
+	});
+}));
+
+//old code work with github
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
+passport.serializeUser(function (user,done){
+	console.log('serializeUser:', user._id);
+	done(null, user._id);
+});
+passport.deserializeUser(function (id, done){
+	User.findById(id, function (err, user) {
+	done(null, user);
+	});
+});
 
 //tell express to use public dir for css and js
 app.use(express.static(__dirname + '/public'));
@@ -65,7 +101,8 @@ app.get('/api/blogs/:id', function (req,res) {
 //create new blog posting
 app.post('/api/blogs', function (req, res) {
 	if (req.user) {
-		var newBlog = new Blog(req.body, req.user);
+		var newBlog = new Blog (req.body, req.user);
+		newBlog.postedBy = req.user._id;
 		newBlog.save(function(err, savedBlog){
 			if(err) {
 				res.status(500).json({error: err.message});
@@ -195,6 +232,18 @@ app.post('/login', passport.authenticate('local',
 app.get('/hackers', function (req,res) {
 	res.render('hackers');
 });
+
+//github login
+app.get('/auth/github', passport.authenticate('github'), function (req,res) {
+//request gets redirected to github for authentication
+});
+
+app.get('/auth/github/callback', passport.authenticate('github', {failureRedirect: '/login' }),
+	function (req,res) {
+		res.redirect('/profile');
+	}
+);
+
 
 //log out user
 app.get('/logout', function (req,res) {
